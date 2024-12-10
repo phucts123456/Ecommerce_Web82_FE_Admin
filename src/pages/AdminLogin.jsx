@@ -1,22 +1,25 @@
 import React, {useState} from "react";
 import { Form, Input, Button, Typography, Card, Row, Col } from "antd";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Logo from "../components/Layout/Logo";
 import user from "../user";
+import store from "../store";
+import { login } from "../apis/user";
 const { Title, Text } = Typography;
 
 const AdminLogin = () => {
   const navigate = useNavigate();
   const [message, setMessage] = useState("");
   const onFinish = (values) => {
-    const { userName, password } = values;
-    const isExist = user.find(u => u.password == password && u.userName == userName);
-    if(isExist) {
-      navigate("/admin/dashboard");
-    } else {
-      setMessage("Login fail. Wrong username or password");
-    }
-    //
+    login(values).then((response) => {
+      if (response.status === 200) {
+        navigate("/admin/dashboard");
+        store.dispatch({ type: 'SET_TOKEN', payload: 'abc' });
+        console.log(store.getState());
+      }
+    }).catch((error) => {
+      setMessage(error.response.data.message);
+    })
   };
 
   return (
@@ -84,6 +87,7 @@ const AdminLogin = () => {
                 </Button>
               </Form.Item>
             </Form>
+            <Link to={'/store/regist'} >Regist store</Link>
           </Card>
         </Col>
       </Row>

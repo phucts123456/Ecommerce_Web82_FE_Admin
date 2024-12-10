@@ -1,6 +1,7 @@
 import axiosClient from "./axiosInstance";
 const userEndpoint = "/user"
-const activeEndpoint = "/active"
+const activeEndpoint = "/active";
+const loginEndpoint = "/login-admin";
 function getUserList(pageNumber, limit)
 {
     return axiosClient.get(`${userEndpoint}`, 
@@ -14,6 +15,14 @@ function getUserList(pageNumber, limit)
 function getUserDetail(userId)
 {
     return axiosClient.get(`${userEndpoint}/${userId}`);
+}
+
+function login(formData) {
+    return axiosClient.post(`${userEndpoint}${loginEndpoint}`, 
+    {
+        userName: formData.userName,
+        password: formData.password,
+     })
 }
 
 function deleteUser(userId) 
@@ -31,5 +40,6 @@ export {
     getUserList,
     getUserDetail,
     deleteUser,
-    activeUser
+    activeUser,
+    login
 }

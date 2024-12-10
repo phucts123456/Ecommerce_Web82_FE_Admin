@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { PlusOutlined, ArrowLeftOutlined } from "@ant-design/icons";
+import { PlusOutlined, ArrowLeftOutlined, UploadOutlined } from "@ant-design/icons";
 import {
   Button,
   Form,
@@ -11,14 +11,15 @@ import {
   Switch,
   Skeleton,
   Alert,
-  Spin
+  Spin,
+  Table
 } from "antd";
 import { LoadingOutlined } from '@ant-design/icons';
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { getAllCategory } from "../apis/category";
-import { getProductDetail, registProduct, updateProduct } from "../apis/product";
+import { getProductDetail, getProductVariation, registProduct, updateProduct } from "../apis/product";
 const { TextArea } = Input; // Ensure correct declaration
-
+import { v4 as uuidv4 } from 'uuid';
 const normFile = (e) => {
   if (Array.isArray(e)) {
     return e;
@@ -30,6 +31,7 @@ const AddProductForm = () => {
   const [componentDisabled, setComponentDisabled] = useState(false);
   const [categoryList, setCategoryList] = useState([]);
   const [fileList, setFileList] = useState([]);
+  const [variationFileList, setVariationFileList] = useState([]);
   const navigate = useNavigate(); // Hook điều hướng
   const [form] = Form.useForm();
   const [product, setProduct] = useState();
@@ -37,8 +39,10 @@ const AddProductForm = () => {
   const [message, setMessage] = useState("");
   const [isSuccess, setIsSuccess] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
+  const [variations , setVariations] = useState([]);
   const pid = searchParams.get("pid");
   const isUpdate = pid !== null;
+  const templateFileName = "file_vid_";
   const onFinish = (values) => {
     const {productName, price, category, image, quantity, description, isAvailable} = values;
     let formData = new FormData();
@@ -48,18 +52,27 @@ const AddProductForm = () => {
     formData.append("name", productName);
     formData.append("isAvailable", isAvailable === undefined ? false : isAvailable);
     formData.append("price", price);
+    formData.append("variations", JSON.stringify(variations));
+    console.log("JSON.stringify(variations)")
+    console.log(JSON.stringify(variations))
+    const originFileObjVariation = [];
+    //variationFileList.map((file) =>{
+    //   console.log("file.originFileObj");
+    //   console.log(file.originFileObj);
+    //   file.originFileObj.filename = file.name;
+    //   originFileObjVariation.push(file.originFileObj);
+    // })
+    //formData.append("variationFiles", originFileObjVariation);
     setIsLoading(true);
-    console.log(product?.image)
-    console.log(image[0]?.url)
     const isUpdateImg = (product?.image !== undefined &&  image[0]?.url === product.image) === false;
     if((isUpdate && isUpdateImg) || !isUpdate) {    
       formData.append("file", image[0].originFileObj);
     } else {
       formData.append("image", product.image);
     }
-    console.log(isUpdate)
+    console.log(product)
     if(isUpdate) {
-      updateProduct(formData, isUpdateImg, product._id).then((response) => {
+      updateProduct(formData, isUpdateImg, product._id, variationFileList).then((response) => {
         setIsSuccess(true);
         setMessage(response.data.message);
       }).catch((error) => {
@@ -70,12 +83,9 @@ const AddProductForm = () => {
       });
     } else {
       registProduct(formData).then((response) => {
-        console.log(response.data.message);
         setMessage(response.data.message);
         setIsSuccess(true);
       }).catch((error) => {
-        console.log(error)
-        console.log(error.response.data.message)
         setMessage(error.response.data.message);
         setIsSuccess(false);
       }).finally(() => {
@@ -92,9 +102,9 @@ const AddProductForm = () => {
       console.log(error.response.data.message);
     })
     if (isUpdate) {     
-      setIsLoading(true);
-      getProductDetail(pid).then((response) => {
-        const productDetail = response.data.data;
+      (async () => {
+        const productResponse = await getProductDetail(pid);
+        const productDetail = productResponse.data.data;
         form.setFieldValue("productName", productDetail.name);
         form.setFieldValue("category", productDetail.categoryId?._id);
         form.setFieldValue("quantity", productDetail.quantity);
@@ -105,21 +115,137 @@ const AddProductForm = () => {
             url: productDetail.image,
         }]
         form.setFieldValue("image", productImage);
-        setProduct(response.data.data);
-      }).catch((error) => {
-        console.log(error)
-      }).finally(() => {
-        setTimeout(()=>{setIsLoading(false)}, 1200)
-      });
+        const variationResponse = await getProductVariation(pid);
+        setProduct(productDetail);
+        setVariations(variationResponse.data.data);
+      })();
     }
   }, [])
+
   const handleGoBack = () => {
     navigate("/admin/products"); // Path to the ProductManagement page
   };
 
+  const addVariation = () => {
+    const emptyVariation = {
+        key: variations.length + 1,
+        _id:`file_vid_${variations.length + 1}`,
+        name: '',
+        price: 1000,
+        color: '',
+        image: null
+    }
+    setVariations([...variations, emptyVariation])
+  }
+
+  const deleteVariation = (id) => {
+    console.log(id)
+    let fileToRemove = variationFileList.filter(file => !file.name.includes(id));
+    console.log(variationFileList)
+    console.log(fileToRemove)
+    setVariationFileList(fileToRemove);
+    setVariations(variations.filter(variation => variation._id !== id));
+  }
+
+  const addFileToVaritionFileList = (file, key) => {
+    const fileExtension = file.name.substring(file.name.lastIndexOf("."), file.name.length);
+    const fileNameWithoutExtension =  `${key}`
+    const fileName = `${fileNameWithoutExtension}${fileExtension}`
+    file.name = fileName
+    if (variationFileList.length === 0 ) {
+      console.log("add new")
+      console.log(file);
+      let arrayTemp = [file];
+      console.log(arrayTemp);
+      setVariationFileList(arrayTemp)
+    }
+    else {
+      console.log("before");
+      console.log(variationFileList)
+      let fileArray = variationFileList.filter(file => file.name !== fileName);
+      console.log("after filter");
+      console.log(fileArray)
+      console.log("update")
+      console.log(file);
+      let arrayTemp = [...fileArray, file];
+      console.log(arrayTemp);
+      setVariationFileList(arrayTemp);
+    }
+    console.log(variationFileList);
+  }
+  const setVariationName = (value, id) => {
+    let variationToUpdate = variations.find(varriation => varriation._id === id);
+    //let variationList = variations.filter(varriation => varriation._id !== id);
+    variationToUpdate.name = value;
+    //setVariations([...variationList, variationToUpdate]);
+    console.log(variations);
+  }
+
+  const dataSource = [
+    {
+      key: '1',
+      name: 'Option 1',
+      price: 32,
+      color: 'Red',
+      image: 'https://cdn.24h.com.vn/upload/1-2021/images/2021-02-26/image50-1614333620-651-width500height800.jpg'
+    },
+    {
+      key: '1',
+      name: 'Option 1',
+      price: 32,
+      color: 'Red',
+      image: 'https://donghodoapsuat.net/wp-content/uploads/2022/09/de-thuong-hinh-nen-mau-vang.jpg'
+    },
+  ];
+  
+  const columns = [
+    {
+      title: 'Name',
+      dataIndex: 'name',
+      render:  (t, r) => <Input style={{width: '150px'}} onChange={(e) => setVariationName(e.target.value, r._id)} defaultValue={r.name} />
+    },
+    {
+      title: 'Price',
+      dataIndex: 'price',
+      render:  (t, r) =>         
+      <Input style={{width: '100px'}} defaultValue={r.price} />
+    },
+    {
+      title: 'Color',
+      dataIndex: 'color',
+      render:  (t, r) => <Input style={{width: '100px'}} defaultValue={r.color} />
+    },
+    {
+      title: 'Image',
+      dataIndex: 'image',
+      render:  (t, r, index) =>           
+    <Form.Item
+      name={`${'file_vid_'}${r._id}`}
+      valuePropName="fileList"
+      style={{width: '200px'}}
+      getValueFromEvent={normFile}
+    >
+      <Upload
+      maxCount={1} 
+      multiple={false} 
+      action='#'
+      beforeUpload={() => false}
+      defaultFileList={[{url:r.image}]} 
+      listType="picture" onChange={(e) => {addFileToVaritionFileList(e.fileList[0], r._id)}}>
+        <Button   type="primary" icon={<UploadOutlined />}>
+          Upload
+        </Button>
+      </Upload>
+    </Form.Item>
+    },
+    {
+      title: 'Action',
+      render:  (t, r) => <Button onClick={() => deleteVariation(r._id)}>Delete</Button>
+    },
+  ];
+
   return (
     <>{ 
-     
       message !== "" &&
       <Alert
       message={message}
@@ -298,6 +424,14 @@ const AddProductForm = () => {
               {isLoading ? <Spin indicator={<LoadingOutlined spin />} size="small" /> : pid !== null ? 'Update Product' : 'Add Product' }
             </Button>
           </Form.Item>
+          {
+           
+           variations.length > 0 && 
+           <>          
+             <Button onClick={addVariation}>Add variation</Button>
+             <Table dataSource={variations} columns={columns} pagination={false} /> 
+           </>    
+         }
         </Form>
         <Button
           type="default"
@@ -309,7 +443,6 @@ const AddProductForm = () => {
         </Button>
       </>
     }
-
     </>
   );
 };

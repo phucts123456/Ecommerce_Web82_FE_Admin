@@ -12,6 +12,7 @@ import CategoryManagement from "../components/CategoryManagement";
 import AddProduct from "../components/AddProduct";
 import OrderDetail from "../components/OrderDetail";
 import UserDetail from "../components/UserDetail";
+import PrivateRoute from "../components/Layout/PrivateRoute";
 
 const { Content, Sider } = Layout;
 
@@ -47,6 +48,7 @@ const AdminHome = () => {
           }}
         >
           <Routes>
+          <Route Component={PrivateRoute}>
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="users" element={<UserManagement />} />
             <Route path="products" element={<ProductManagement />} />
@@ -57,6 +59,7 @@ const AdminHome = () => {
             <Route path="products/edit" element={<AddProduct />} />
             <Route path="orders/:orderId" element={<OrderDetail />} />
             <Route path="users/:userId" element={<UserDetail />} />
+           </Route>
           </Routes>
         </Content>
       </Layout>

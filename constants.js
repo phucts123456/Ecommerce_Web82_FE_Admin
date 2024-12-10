@@ -15,6 +15,9 @@ const constants = {
     CONST_ORDER_STATUS_SHIPPING_TEXT:"Shipping",
     CONST_ORDER_STATUS_SHIPPED_TEXT:"Shipped",
     CONST_ORDER_STATUS_COMPLETE_TEXT:"Complete",
+    CONST_ROLE_SHOP: "shop",
+    CONST_ROLE_CUSTOMER: "customer",
+    CONST_ROLE_ADMIN: "admin"
 }
 
 export default constants
