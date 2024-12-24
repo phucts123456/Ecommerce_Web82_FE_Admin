@@ -13,7 +13,9 @@ import AddProduct from "../components/AddProduct";
 import OrderDetail from "../components/OrderDetail";
 import UserDetail from "../components/UserDetail";
 import PrivateRoute from "../components/Layout/PrivateRoute";
-
+import StockManagement from "../components/StockManagement";
+import StockDetail from "../components/StockDetail";
+import { sessionService } from 'redux-react-session';
 const { Content, Sider } = Layout;
 
 const AdminHome = () => {
@@ -21,7 +23,10 @@ const AdminHome = () => {
 
   // Hàm xử lý logout
   const handleLogout = () => {
-    localStorage.removeItem("adminToken");
+    // sessionService.deleteSession().then(() => {
+    //   navigate("/");
+    // })
+    localStorage.removeItem("accessToken");
     navigate("/");
   };
 
@@ -53,12 +58,13 @@ const AdminHome = () => {
             <Route path="users" element={<UserManagement />} />
             <Route path="products" element={<ProductManagement />} />
             <Route path="orders" element={<OrderManagement />} />
-            <Route path="inventory" element={<InventoryManagement />} />
+            <Route path="stock" element={<StockManagement />} />
             <Route path="categories" element={<CategoryManagement />} />
             <Route path="products/add" element={<AddProduct />} />
             <Route path="products/edit" element={<AddProduct />} />
             <Route path="orders/:orderId" element={<OrderDetail />} />
             <Route path="users/:userId" element={<UserDetail />} />
+            <Route path="stock/edit" element={<StockDetail />} />
            </Route>
           </Routes>
         </Content>

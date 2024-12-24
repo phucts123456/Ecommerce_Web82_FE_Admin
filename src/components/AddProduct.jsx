@@ -20,6 +20,7 @@ import { getAllCategory } from "../apis/category";
 import { getProductDetail, getProductVariation, registProduct, updateProduct } from "../apis/product";
 const { TextArea } = Input; // Ensure correct declaration
 import { v4 as uuidv4 } from 'uuid';
+import { toVndString } from "../utils/currencyUtil";
 const normFile = (e) => {
   if (Array.isArray(e)) {
     return e;
@@ -55,7 +56,7 @@ const AddProductForm = () => {
     formData.append("variations", JSON.stringify(variations));
     console.log("JSON.stringify(variations)")
     console.log(JSON.stringify(variations))
-    const originFileObjVariation = [];
+    //const originFileObjVariation = [];
     //variationFileList.map((file) =>{
     //   console.log("file.originFileObj");
     //   console.log(file.originFileObj);
@@ -73,16 +74,18 @@ const AddProductForm = () => {
     console.log(product)
     if(isUpdate) {
       updateProduct(formData, isUpdateImg, product._id, variationFileList).then((response) => {
+        console.log(response)
         setIsSuccess(true);
         setMessage(response.data.message);
       }).catch((error) => {
-        setMessage(error.data.message);
+        console.log(error)
+        setMessage(error.response.message);
         setIsSuccess(false);
       }).finally(() => {   
         setIsLoading(false);
       });
     } else {
-      registProduct(formData).then((response) => {
+      registProduct(formData, variationFileList).then((response) => {
         setMessage(response.data.message);
         setIsSuccess(true);
       }).catch((error) => {
@@ -106,11 +109,12 @@ const AddProductForm = () => {
         const productResponse = await getProductDetail(pid);
         const productDetail = productResponse.data.data;
         form.setFieldValue("productName", productDetail.name);
+        form.setFieldValue("price", productDetail.price);
         form.setFieldValue("category", productDetail.categoryId?._id);
         form.setFieldValue("quantity", productDetail.quantity);
         form.setFieldValue("description", productDetail.description);
         form.setFieldValue("isAvailable", productDetail.isAvailable);
-        form.setFieldValue("price", productDetail.price);
+        console.log(productDetail.price)
         const productImage = [{
             url: productDetail.image,
         }]
@@ -132,7 +136,6 @@ const AddProductForm = () => {
         _id:`file_vid_${variations.length + 1}`,
         name: '',
         price: 1000,
-        color: '',
         image: null
     }
     setVariations([...variations, emptyVariation])
@@ -186,14 +189,12 @@ const AddProductForm = () => {
       key: '1',
       name: 'Option 1',
       price: 32,
-      color: 'Red',
       image: 'https://cdn.24h.com.vn/upload/1-2021/images/2021-02-26/image50-1614333620-651-width500height800.jpg'
     },
     {
       key: '1',
       name: 'Option 1',
       price: 32,
-      color: 'Red',
       image: 'https://donghodoapsuat.net/wp-content/uploads/2022/09/de-thuong-hinh-nen-mau-vang.jpg'
     },
   ];
@@ -209,11 +210,6 @@ const AddProductForm = () => {
       dataIndex: 'price',
       render:  (t, r) =>         
       <Input style={{width: '100px'}} defaultValue={r.price} />
-    },
-    {
-      title: 'Color',
-      dataIndex: 'color',
-      render:  (t, r) => <Input style={{width: '100px'}} defaultValue={r.color} />
     },
     {
       title: 'Image',
@@ -297,18 +293,6 @@ const AddProductForm = () => {
           </Form.Item>
 
           <Form.Item
-            label="Quantity"
-            name="quantity"
-            rules={[{ required: true, message: "Please input product quantity" }]}
-          >
-            <Skeleton.Input active={true} size={'default'} />
-          </Form.Item>
-
-          <Form.Item label="Product Description" name="description">
-            <Skeleton.Input active={true} size={'default'} />
-          </Form.Item>
-
-          <Form.Item
             label="Image"
             name="image"
             valuePropName="fileList"
@@ -360,14 +344,16 @@ const AddProductForm = () => {
             label="Product Price"
             name="price"
             rules={[
-              { required: true, message: "Please enter the product price" },
+              { required: true, message: "Please enter the product price." },
+              //{ pattern: new RegExp("^(\d*\.?\d+|\d{1,3}(,\d{3})*(\.\d+)?)$"), message: "Please enter number only." },
             ]}
           >
             <InputNumber
-              placeholder="Enter price"
-              min={0}
-              style={{ width: "100%" }}
-            />
+              placeholder="Enter price"    
+              defaultValue={1000}
+              formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+              parser={(value) => value?.replace(/\$\s?|(,*)/g, '')}         
+              style={{ width: "100%" }} />
           </Form.Item>
 
           <Form.Item
@@ -383,18 +369,6 @@ const AddProductForm = () => {
             </Select>
           </Form.Item>
 
-          <Form.Item
-            label="Quantity"
-            name="quantity"
-            rules={[{ required: true, message: "Please input product quantity" }]}
-          >
-            <InputNumber
-              placeholder="Product quantity"
-              min={0}
-              style={{ width: "100%" }}
-            />
-          </Form.Item>
-
           <Form.Item label="Product Description" name="description">
             <TextArea rows={4} placeholder="Enter product description" />
           </Form.Item>
@@ -406,7 +380,13 @@ const AddProductForm = () => {
             getValueFromEvent={normFile}
             rules={[{ required: true, message: "Please upload an image"}]}
           >
-            <Upload maxCount={1} multiple={false} fileList={fileList} listType="picture-card" onChange={(e) => { setFileList(e.fileList[0])}}>
+            <Upload 
+            maxCount={1} 
+            multiple={false}
+            fileList={fileList} 
+            listType="picture-card"
+            beforeUpload={() => false}
+             onChange={(e) => { setFileList(e.fileList[0])}}>
               <div>
                 <PlusOutlined />
                 <div style={{ marginTop: 8 }}>Upload</div>
@@ -425,8 +405,6 @@ const AddProductForm = () => {
             </Button>
           </Form.Item>
           {
-           
-           variations.length > 0 && 
            <>          
              <Button onClick={addVariation}>Add variation</Button>
              <Table dataSource={variations} columns={columns} pagination={false} /> 

@@ -1,5 +1,5 @@
 import { combineReducers } from 'redux';
-
+import { sessionReducer } from 'redux-react-session';
 const initialState = {
   loginUser: {},
 };
@@ -20,6 +20,7 @@ const userReducer = (state = initialState, action) => {
 
 const rootReducer = combineReducers({
   user: userReducer,
+  session: sessionReducer
 });
 
 export default rootReducer;

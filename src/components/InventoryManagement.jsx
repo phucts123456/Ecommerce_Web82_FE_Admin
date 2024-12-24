@@ -8,6 +8,9 @@ import {
 
 const InventoryManagement = () => {
   const [data, setData] = useState([]);
+  useEffect(() => {
+    
+  })
 
   useEffect(() => {
     // Mock data fetch simulation

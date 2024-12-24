@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import { Table, Button, Space } from 'antd';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getProductList } from '../apis/product';
 import constants from '../../constants';
 import { Spin } from 'antd';
-
+import UserContext from "../context/userContext";
 const ProductManagement = () => {
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
@@ -13,6 +13,7 @@ const ProductManagement = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const pageNumber = Number.parseInt(searchParams.get("pn") !== null ? searchParams.get("pn") : 1);
   const pageSize = constants.CONST_PRODUCT_PER_PAGE;
+  const userContext = useContext(UserContext);
   useEffect(() => {
     setIsLoading(true);
     console.log(pageNumber)
@@ -105,7 +106,6 @@ const ProductManagement = () => {
         }}
         loading={isLoading && <Spin tip="Loading"></Spin>} 
         />
-        
     </div>
   );
 };

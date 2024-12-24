@@ -6,16 +6,19 @@ import user from "../user";
 import store from "../store";
 import { login } from "../apis/user";
 const { Title, Text } = Typography;
-
+import { sessionService } from 'redux-react-session';
 const AdminLogin = () => {
   const navigate = useNavigate();
   const [message, setMessage] = useState("");
   const onFinish = (values) => {
     login(values).then((response) => {
       if (response.status === 200) {
+        console.log(response)
+        // sessionService.saveSession({token:response.data.accessToken}).then(()=>{
+        //   navigate("/admin/dashboard");
+        // });
+        localStorage.setItem("accessToken",response.data.accessToken)
         navigate("/admin/dashboard");
-        store.dispatch({ type: 'SET_TOKEN', payload: 'abc' });
-        console.log(store.getState());
       }
     }).catch((error) => {
       setMessage(error.response.data.message);

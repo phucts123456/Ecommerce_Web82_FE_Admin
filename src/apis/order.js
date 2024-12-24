@@ -1,11 +1,10 @@
 import axiosClient from "./axiosInstance";
-const orderEndpoint = "/orders"
-const updateStatusEndpoint = "/updateStatus"
+const orderEndpoint = "/orders";
+const updateStatusEndpoint = "/updateStatus";
 function getOrderDetail(orderId)
 {
     return axiosClient.get(`${orderEndpoint}/${orderId}`);
 }
-
 
 function getOrderList(pageNumber, limit)
 {
